@@ -10,7 +10,7 @@ export class Server {
 
   private activeSockets: string[] = [];
 
-  private readonly DEFAULT_PORT = env.process.PORT || 5000;
+  private readonly DEFAULT_PORT = parseInt(process.env.PORT);
 
   constructor() {
     this.initialize();
