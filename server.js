@@ -11,6 +11,8 @@ app.get("/", (req, res) => {
   res.sendFile("index.html")
 })
 
+let activeSockets = []
+
 io.on('connection', socket => {
   const existingSocket = activeSockets.find(
     existingSocket => existingSocket === socket.id
