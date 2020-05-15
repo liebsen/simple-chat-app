@@ -12,15 +12,15 @@ app.get("/", (req, res) => {
 })
 
 io.on('connection', socket => {
-  const existingSocket = this.activeSockets.find(
+  const existingSocket = activeSockets.find(
     existingSocket => existingSocket === socket.id
   )
 
   if (!existingSocket) {
-    this.activeSockets.push(socket.id)
+    activeSockets.push(socket.id)
 
     socket.emit("update-user-list", {
-      users: this.activeSockets.filter(
+      users: activeSockets.filter(
         existingSocket => existingSocket !== socket.id
       )
     });
@@ -51,7 +51,7 @@ io.on('connection', socket => {
   })
 
   socket.on("disconnect", () => {
-    this.activeSockets = this.activeSockets.filter(
+    activeSockets = activeSockets.filter(
       existingSocket => existingSocket !== socket.id
     )
     socket.broadcast.emit("remove-user", {
