@@ -1,7 +1,7 @@
 let isAlreadyCalling = false;
 let getCalled = false;
-
-const existingCalls = [];
+let existingCalls = [];
+let existingCall = false
 
 const { RTCPeerConnection, RTCSessionDescription } = window;
 
@@ -63,10 +63,18 @@ function updateUserList(socketIds) {
   });
 }
 
-const socket = io.connect("https://comino.herokuapp.com");
+const socket = io.connect("comino.herokuapp.com");
+//const socket = io.connect("192.168.2.13:5000");
 
 socket.on("update-user-list", ({ users }) => {
   updateUserList(users);
+  console.log(users)
+  if (!existingCall) {
+    setTimeout(() => {
+      callUser(users[0])
+      existingCall = true
+    }, 1000)
+  }
 });
 
 socket.on("remove-user", ({ socketId }) => {
@@ -78,7 +86,7 @@ socket.on("remove-user", ({ socketId }) => {
 });
 
 socket.on("call-made", async data => {
-  if (getCalled) {
+  /*if (getCalled) {
     const confirmed = confirm(
       `User "Socket: ${data.socket}" wants to call you. Do accept this call?`
     );
@@ -90,7 +98,7 @@ socket.on("call-made", async data => {
 
       return;
     }
-  }
+  }*/
 
   await peerConnection.setRemoteDescription(
     new RTCSessionDescription(data.offer)
@@ -142,3 +150,4 @@ navigator.getUserMedia(
     console.warn(error.message);
   }
 );
+

@@ -2,7 +2,18 @@ const fs = require('fs')
 var express = require('express')
 var path = require('path')
 var app = express()
-var http = require('http').Server(app)
+
+const options = {
+  key: fs.readFileSync('key.pem'),
+  cert: fs.readFileSync('cert.pem')
+}
+
+if (process.env.SSL) {
+  var http = require('https').Server(options, app)
+} else {
+  var http = require('http').Server(app)
+}
+
 var io = require('socket.io')(http, { origins: '*:*', pingInterval: 15000})
 
 app.use(express.static(path.join(__dirname, 'public')))
