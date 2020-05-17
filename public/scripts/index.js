@@ -68,12 +68,11 @@ const socket = io.connect("comino.herokuapp.com");
 
 socket.on("update-user-list", ({ users }) => {
   updateUserList(users);
-  console.log(users)
   if (!existingCall) {
     setTimeout(() => {
       callUser(users[0])
       existingCall = true
-    }, 1000)
+    }, 3000)
   }
 });
 
