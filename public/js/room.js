@@ -2,10 +2,15 @@ let isAlreadyCalling = false;
 let getCalled = false;
 let existingCalls = [];
 let existingCall = false
+let localStreamId = ''
+let roomId = location.pathname.split('/').reverse()[0]
 
 const { RTCPeerConnection, RTCSessionDescription } = window;
-
 const peerConnection = new RTCPeerConnection();
+
+function sanitizeStreamId(id) {
+  return id.split('{').join('').split('}').join('').split('-').join('')
+}
 
 function unselectUsersFromList() {
   const alreadySelectedUser = document.querySelectorAll(
@@ -34,10 +39,10 @@ function createUserItemContainer(socketId) {
     userContainerEl.setAttribute("class", "active-user active-user--selected");
     const talkingWithInfo = document.getElementById("talking-with-info");
     talkingWithInfo.innerHTML = `Talking with: "Socket: ${socketId}"`;
-    callUser(socketId);
+    callUser(socketId)
   });
 
-  return userContainerEl;
+  return userContainerEl
 }
 
 async function callUser(socketId) {
@@ -48,6 +53,10 @@ async function callUser(socketId) {
     offer,
     to: socketId
   });
+}
+
+function debug(text) {
+  document.getElementById('debug').innerHTML+= text + "\n"
 }
 
 function updateUserList(socketIds) {
@@ -63,8 +72,8 @@ function updateUserList(socketIds) {
   });
 }
 
-const socket = io.connect("comino.herokuapp.com");
-//const socket = io.connect("192.168.2.13:5000");
+const socket = io.connect("zuky.herokuapp.com");
+// const socket = io.connect("192.168.2.13:5000");
 
 socket.on("update-user-list", ({ users }) => {
   updateUserList(users);
@@ -126,18 +135,41 @@ socket.on("answer-made", async data => {
 socket.on("call-rejected", data => {
   alert(`User: "Socket: ${data.socket}" rejected your call.`);
   unselectUsersFromList();
-});
+})
+
+socket.on("room-left", data => {
+  debug('room-left: ' + data.id)
+  if (document.getElementById(data.id)) {
+    document.getElementById(data.id).remove()
+  }
+})
 
 peerConnection.ontrack = function({ streams: [stream] }) {
-  const remoteVideo = document.getElementById("remote-video");
-  if (remoteVideo) {
-    remoteVideo.srcObject = stream;
+  let id = sanitizeStreamId(stream.id)
+  let video = document.getElementById(id)
+  if (!video) {
+    var videoElem = document.createElement('video')
+    videoElem.setAttribute('autoplay', true)
+    videoElem.setAttribute('id', id)
+    videoElem.className = 'remote-video'
+    video = document.querySelector('.video-container').appendChild(videoElem)
   }
-};
+  if (video) {
+    debug("remote: " + id)
+    video.srcObject = stream
+  }
+}
+
+navigator.getUserMedia = ( navigator.getUserMedia ||
+                       navigator.webkitGetUserMedia ||
+                       navigator.mozGetUserMedia ||
+                       navigator.msGetUserMedia);
 
 navigator.getUserMedia(
   { video: true, audio: true },
   stream => {
+    localStreamId = sanitizeStreamId(stream.id)
+    debug("local: " + localStreamId)
     const localVideo = document.getElementById("local-video");
     if (localVideo) {
       localVideo.srcObject = stream;
@@ -150,3 +182,15 @@ navigator.getUserMedia(
   }
 );
 
+window.onbeforeunload = () => {
+  socket.emit("leave-room", {
+    room: roomId,
+    id: localStreamId
+  })
+}
+
+window.onload = () => {
+  socket.emit("join-room", {
+    room: roomId
+  })
+}

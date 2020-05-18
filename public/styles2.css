@@ -90,7 +90,7 @@ body {
   font-size: 21px;
 }
 
-.remote-video {
+.video-container .remote-video:nth-child(1) {
   position: absolute;
   top: 50%; 
   left: 50%;
@@ -104,7 +104,7 @@ body {
   overflow: hidden;
 }
 
-.local-video {
+.video-container .local-video {
   box-shadow: 0px 10px 20px #00000033;
   position: absolute;
   bottom: 1rem;
@@ -114,7 +114,8 @@ body {
 }
 
 @media screen and (max-width: 480px) {
-  .local-video {
-    width: 5rem;
+  .video-container video:not(:nth-child(2)) {
+      width: 5rem;
+    }
   }
 }

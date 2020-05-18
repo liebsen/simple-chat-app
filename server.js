@@ -2,6 +2,31 @@ const fs = require('fs')
 var express = require('express')
 var path = require('path')
 var app = express()
+var cors = require('cors')
+
+var allowedOrigins = [
+  'https://localhost:5000',
+  'https://comino.herokuapp.com'
+]
+
+app.use(cors({
+  origin: function(origin, callback){
+    if(!origin) return callback(null, true)
+    if(allowedOrigins.indexOf(origin) === -1){
+      var msg = 'The CORS policy for this site does not ' +
+                'allow access from the specified Origin.'
+      return callback(new Error(msg), false)
+    }
+    return callback(null, true)
+  }
+}))
+
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*"); // update to match the domain you will make the request from
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
 
 const options = {
   key: fs.readFileSync('key.pem'),
@@ -19,7 +44,11 @@ var io = require('socket.io')(http, { origins: '*:*', pingInterval: 15000})
 app.use(express.static(path.join(__dirname, 'public')))
 
 app.get("/", (req, res) => {
-  res.sendFile("index.html")
+  res.sendFile(path.join(__dirname, 'public/index.html'))
+})
+
+app.get("/r/:room", (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/room.html'))
 })
 
 let activeSockets = []
@@ -42,6 +71,18 @@ io.on('connection', socket => {
       users: [socket.id]
     })
   }
+
+  socket.on("join-room", data => {
+    console.log("join room " + data.room)
+    socket.join(data.room)
+  }) 
+
+  socket.on("leave-room", data => {
+    console.log("leave room " + data.id)
+    socket.to(data.room).emit("room-left", {
+      id: data.id
+    })
+  }) 
 
   socket.on("call-user", data => {
     socket.to(data.to).emit("call-made", {
